@@ -1,28 +1,129 @@
-from main import BooksCollector
+import pytest
+class BooksCollector:
+    def __init__(self):
+        self.books_rating = {}
+        self.favorites = []
+    def add_new_book(self, name):
+        if not self.books_rating.get(name):
+            self.books_rating[name] = 1
+    def set_book_rating(self, name, rating):
+        if self.books_rating.get(name) and rating in range(1, 11):
+            self.books_rating[name] = rating
+    def get_book_rating(self, name):
+        return self.books_rating.get(name)
+    def get_books_with_specific_rating(self, rating):
+        books_with_specific_rating = []
+        if self.books_rating and rating in range(1, 11):
+            for name, book_rating in self.books_rating.items():
+                if book_rating == rating:
+                    books_with_specific_rating.append(name)
 
-# класс TestBooksCollector объединяет набор тестов, которыми мы покрываем наше приложение BooksCollector
-# обязательно указывать префикс Test
-class TestBooksCollector:
+        return books_with_specific_rating
+    def get_books_rating(self):
+        return self.books_rating
+    def add_book_in_favorites(self, name):
+        if self.books_rating.get(name):
+            if name not in self.favorites:
+                self.favorites.append(name)
+    def delete_book_from_favorites(self, name):
+        if name in self.favorites:
+            self.favorites.remove(name)
+    def get_list_of_favorites_books(self):
+        return self.favorites
+@pytest.fixture(scope='function')
+def books_collector():
+    return BooksCollector()
 
-    
+NAME = 'Book Name'
+WRONG_NAME = 'Wrong Name'
 
-    # пример теста:
-    # обязательно указывать префикс test_
-    # дальше идет название метода, который тестируем add_new_book_
-    # затем, что тестируем add_two_books - добавление двух книг
-    def test_add_new_book_add_two_books(self):
-        # создаем экземпляр (объект) класса BooksCollector
-        collector = BooksCollector()
+def test_add_book(books_collector):
+    books_collector.add_new_book(NAME)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {NAME: 1}
 
-        # добавляем две книги
-        collector.add_new_book('Гордость и предубеждение и зомби')
-        collector.add_new_book('Что делать, если ваш кот хочет вас убить')
+def test_add_book_twice(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.add_new_book(NAME)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {NAME: 1}
 
-        # проверяем, что добавилось именно две
-        # словарь books_rating, который нам возвращает метод get_books_rating, имеет длину 2
-        assert len(collector.get_books_rating()) == 2
+def test_add_rating_to_absent_book_fails(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.set_book_rating(WRONG_NAME, 5)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {NAME: 1}
 
-    # напиши свои тесты ниже
-    # чтобы тесты были независимыми в каждом из них создавай отдельный экземпляр класса BooksCollector()
+def test_cant_set_rating_less_than_one(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.set_book_rating(NAME, 0)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {NAME: 1}
 
-    #test
+def test_cant_set_rating_greater_than_ten(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.set_book_rating(NAME, 11)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {NAME: 1}
+
+def test_absent_book_has_no_rating(books_collector):
+    books_collector.add_new_book(NAME)
+    rating = books_collector.get_book_rating(WRONG_NAME)
+    assert rating is None
+
+def test_add_to_favorites(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.add_book_in_favorites(NAME)
+    assert books_collector.favorites == [NAME]
+    assert books_collector.books_rating == {NAME: 1}
+
+def test_add_to_favorites_fails_if_not_in_ratings(books_collector):
+    books_collector.add_book_in_favorites(NAME)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {}
+
+def test_delete_from_favorites(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.add_book_in_favorites(NAME)
+    books_collector.delete_book_from_favorites(NAME)
+    assert books_collector.favorites == []
+    assert books_collector.books_rating == {NAME: 1}
+
+def test_get_list_of_favorites_books(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.add_book_in_favorites(NAME)
+    assert books_collector.get_list_of_favorites_books() == [NAME]
+
+def test_get_books_rating(books_collector):
+    books_collector.add_new_book(NAME)
+    assert books_collector.get_books_rating() == {NAME: 1}
+
+def test_set_book_rating(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.set_book_rating(NAME, 7)
+    assert books_collector.books_rating == {NAME: 7}
+
+def test_get_books_with_specific_rating(books_collector):
+    books_collector.add_new_book(NAME)
+    books_collector.add_new_book(WRONG_NAME)
+    books_collector.add_new_book('Another Name')
+    books_collector.set_book_rating(WRONG_NAME, 7)
+    result = books_collector.get_books_with_specific_rating(1)
+    assert [NAME, 'Another Name'] == result
+
+def test_get_books_with_specific_rating_fails_if_no_books(books_collector):
+    result = books_collector.get_books_with_specific_rating(1)
+    assert [] == result
+
+def test_get_books_with_specific_rating_fails_if_no_books_with_same(books_collector):
+    books_collector.add_new_book(NAME)
+    result = books_collector.get_books_with_specific_rating(9)
+    assert [] == result
+
+def test_get_books_with_specific_rating_fails_if_wrong_rating(books_collector):
+    books_collector.add_new_book(NAME)
+    result = books_collector.get_books_with_specific_rating(0)
+    assert [] == result
+
+if __name__ == '__main__':
+    pytest.main()
