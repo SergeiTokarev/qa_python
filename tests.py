@@ -1,28 +1,64 @@
+import pytest
 from main import BooksCollector
+@pytest.fixture
+def collector():
+    return BooksCollector()
+def test_add_new_book(collector):
+    collector.add_new_book("Harry Potter")
+    assert collector.get_book_rating("Harry Potter") == 1
 
-# класс TestBooksCollector объединяет набор тестов, которыми мы покрываем наше приложение BooksCollector
-# обязательно указывать префикс Test
-class TestBooksCollector:
+def test_set_book_rating(collector):
+    collector.add_new_book("Harry Potter")
+    collector.set_book_rating("Harry Potter", 8)
+    assert collector.get_book_rating("Harry Potter") == 8
 
+def test_get_books_with_specific_rating(collector):
+    collector.add_new_book("Harry Potter")
+    collector.set_book_rating("Harry Potter", 8)
+    collector.add_new_book("The Lord of the Rings")
+    collector.set_book_rating("The Lord of the Rings", 8)
+    collector.add_new_book("The Hobbit")
+    collector.set_book_rating("The Hobbit", 9)
+    assert collector.get_books_with_specific_rating(8) == ["Harry Potter", "The Lord of the Rings"]
+
+def test_add_book_in_favorites(collector):
+    collector.add_new_book("Harry Potter")
+    collector.add_book_in_favorites("Harry Potter")
+    assert "Harry Potter" in collector.get_list_of_favorites_books()
+
+def test_delete_book_from_favorites(collector):
+    collector.add_new_book("Harry Potter")
+    collector.add_book_in_favorites("Harry Potter")
+    collector.delete_book_from_favorites("Harry Potter")
+    assert "Harry Potter" not in collector.get_list_of_favorites_books()
     
+NAME = 'Book Name'
+WRONG_NAME = 'Wrong Name'
+def test_add_book_twice(collector):
+    collector.add_new_book(NAME)
+    collector.add_new_book(NAME)
+    assert collector.favorites == [] and collector.books_rating == {NAME: 1}
 
-    # пример теста:
-    # обязательно указывать префикс test_
-    # дальше идет название метода, который тестируем add_new_book_
-    # затем, что тестируем add_two_books - добавление двух книг
-    def test_add_new_book_add_two_books(self):
-        # создаем экземпляр (объект) класса BooksCollector
-        collector = BooksCollector()
+def test_cant_set_rating_less_than_one(collector):
+    collector.add_new_book(NAME)
+    collector.set_book_rating(NAME, 0)
+    assert collector.favorites == [] and collector.books_rating == {NAME: 1}
 
-        # добавляем две книги
-        collector.add_new_book('Гордость и предубеждение и зомби')
-        collector.add_new_book('Что делать, если ваш кот хочет вас убить')
+def test_cant_set_rating_greater_than_ten(collector):
+    collector.add_new_book(NAME)
+    collector.set_book_rating(NAME, 11)
+    assert collector.favorites == [] and collector.books_rating == {NAME: 1}
 
-        # проверяем, что добавилось именно две
-        # словарь books_rating, который нам возвращает метод get_books_rating, имеет длину 2
-        assert len(collector.get_books_rating()) == 2
+def test_absent_book_has_no_rating(collector):
+    collector.add_new_book(NAME)
+    rating = collector.get_book_rating(WRONG_NAME)
+    assert rating is None
 
-    # напиши свои тесты ниже
-    # чтобы тесты были независимыми в каждом из них создавай отдельный экземпляр класса BooksCollector()
+def test_get_books_rating(collector):
+    collector.add_new_book(NAME)
+    assert collector.get_books_rating() == {NAME: 1}
 
-    #test
+def test_set_book_rating(collector):
+    collector.add_new_book(NAME)
+    collector.set_book_rating(NAME, 7)
+    assert collector.books_rating == {NAME: 7}
